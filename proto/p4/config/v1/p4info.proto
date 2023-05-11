@@ -463,7 +463,7 @@ message Union {
 message GenericTable {
   Preamble preamble = 1;
   repeated GenericMatchField match_fields = 2;
-  repeated ActionRef union_refs = 3;
+  repeated UnionRef union_refs = 3;
   // 0 (default value) means that the table does not have a const default action
   uint32 const_default_union_id= 4;
   int64 size = 5;  // max number of entries in table
