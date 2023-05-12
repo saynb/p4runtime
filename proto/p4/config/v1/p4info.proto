@@ -105,9 +105,26 @@ message P4Ids {
     DIRECT_METER = 0x15;
     REGISTER = 0x16;
     DIGEST = 0x17;
+    GENERIC_TABLE = 0x18;
 
     // externs for other architectures (vendor extensions)
     OTHER_EXTERNS_START = 0x80;
+
+    // max value for an unsigned 8-bit byte
+    MAX = 0xff;
+    // requires protoc >= 3.5.0
+    // reserved 0x100 to max;
+  }
+}
+
+// A subtype of P4IDs for GenericTables
+message GenericTableType {
+  // The ID space is for Generic tables. In the Preamble ID, the MSB will be
+  // 0x18 but the next MSB is reserved for this enum. This shortens the ID
+  // space for tables in each type but it is still 64k (16 bits) for each table
+  enum Prefix {
+
+    GENERIC_TABLES_START = 0x00;
 
     // max value for an unsigned 8-bit byte
     MAX = 0xff;
@@ -460,7 +477,14 @@ message Union {
   repeated Param params = 2;
 }
 
+// All Tables of one type will be grouped in one message.
 message GenericTable {
+  uint32 generic_table_type_id = 1;
+  string generic_table_type_name = 2;
+  repeated GenericTableInstance instances = 3;
+}
+
+message GenericTableInstance {
   Preamble preamble = 1;
   repeated GenericMatchField match_fields = 2;
   repeated UnionRef union_refs = 3;
