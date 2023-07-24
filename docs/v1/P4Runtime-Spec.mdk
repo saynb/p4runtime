@@ -6405,6 +6405,99 @@ field [@ProtoAny]. At the moment, there is not any mechanism to extend the
 `p4.v1.TableEntry` message based on the value of architecture-specific table
 properties, but we may include on in future versions of the API.
 
+# Intel IPU ES2100 specific changes
+
+Certain backward-compatible changes have been made to the proto files for
+Intel IPU specific changes. These changes are for the below Intel IPU
+externs.
+
+1. DirectPacketModMeter
+2. PacketModMeter
+
+Motivation behind these changes are to enable runtime programmability of
+the mentioned IPU specific externs.
+
+## Proto Changes for DirectPacketModMeter and PacketModMeter
+### p4info.proto
+
+The message `PacketModMeter` and `DirectPacketModMeter` define the Meter
+externs as `Extern`. Their definition goes in the `google.protobuf.Any info`
+of the `ExternInstance` in the P4Info.
+
+~ Begin Proto
+ message PacketModMeter {
+   Preamble preamble = 1;
+   MeterSpec spec = 2;
+   int32 size = 3;
+   uint32 index_width = 4;
+ }
+
+ message DirectPacketModMeter {
+   Preamble preamble = 1;
+   MeterSpec spec = 2;
+ }
+~ End Proto
+
+The 2 extensions that have been included in the message `P4IDs`, enum
+`Prefix` are below. These correspond to `extern_type_id` in the
+`ExternInstance`.
+
+~ Begin Proto
+     PACKET_MOD_METER = 0x85;
+     DIRECT_PACKET_MOD_METER = 0x86;
+~ End Proto
+
+### p4runtime.proto
+
+The message `MeterConfig` itself has been modified such that it contains
+the meter config. So it is now present in all 3 `TableEntry`,
+`DirectMeterEntry` and `MeterEntry`.
+
+~ Begin Proto
+ message MeterConfig {
+   // Committed information rate (units per sec)
+   int64 cir = 1;
+   // Committed burst size
+   int64 cburst = 2;
+   // Peak information rate (units per sec)
+   int64 pir = 3;
+   // Peak burst size
+   int64 pburst = 4;
+
+   PolicerMeterConfig policer_meter_config = 100;
+ }
+~ End Proto
+
+The message `PolicerMeterConfig` contains the following fields
+* `policer_meter_prof_id`, contains the profile ID. This corresponds
+  to the meter profile which will be present in a LookupTable.
+* The next 4 unit fields are to define the units for the last
+  4 fields.
+* The last 4 fields describe the committed and excess information
+  rate and burst sizes.
+
+Please note that when using these 2 externs, the server requires
+that the `cir`, `cburst`, `pir`, `pburst` in the message `MeterConfig`
+are not used. If they are used, the server returns an `INVALID_ARGUMENT`
+error for that entry update.
+
+~ Begin Proto
+ message PolicerMeterConfig {
+   int64 policer_meter_prof_id = 1;
+   // units
+   int64 policer_spec_cir_unit = 2;
+   int64 policer_spec_cbs_unit = 3;
+   int64 policer_spec_eir_unit = 4;
+   int64 policer_spec_ebs_unit = 5;
+   // values
+   int64 policer_spec_cir      = 6;
+   int64 policer_spec_cbs      = 7;
+   int64 policer_spec_eir      = 8;
+   int64 policer_spec_ebs      = 9;
+  }
+~ End Proto
+
+
 # Known Limitations of Current P4Runtime Version
 
 * `FieldMatch`, action `Param`, and controller packet metadata fields only
